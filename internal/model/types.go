@@ -104,8 +104,9 @@ type Reboiler struct {
 }
 
 type Relief struct {
-	Valve    string
-	Pressure float64
-	TimedOut bool
-	Released bool
+	Valve            string
+	Pressure         float64
+	PressureObserved bool
+	TimedOut         bool
+	Released         bool
 }

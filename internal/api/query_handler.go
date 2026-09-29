@@ -31,3 +31,11 @@ func (s *Server) profile(w http.ResponseWriter, r *http.Request) {
 func (s *Server) metrics(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, s.plant.Metrics.Snapshot())
 }
+
+// reliefHistory returns the replay-friendly review document: every shutdown
+// process with each original attempt (command, valve confirmation, pressure
+// readings, timeout and conclusion). A failed attempt stays listed even after
+// a later retry succeeds.
+func (s *Server) reliefHistory(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, http.StatusOK, s.plant.ReliefHistory.Report())
+}

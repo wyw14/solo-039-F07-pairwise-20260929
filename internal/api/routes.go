@@ -16,6 +16,7 @@ func (s *Server) routes() {
 	s.router.Post("/api/products/route", s.routeProduct)
 	s.router.Post("/api/reflux/leases", s.lease)
 	s.router.Post("/api/shutdown", s.shutdown)
+	s.router.Get("/api/relief/history", s.reliefHistory)
 	s.router.Get("/api/snapshot", s.snapshot)
 	s.router.Get("/api/evidence", s.evidence)
 	s.router.Get("/api/recovery", s.recovery)

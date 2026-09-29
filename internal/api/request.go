@@ -22,6 +22,15 @@ type leaseRequest struct {
 	Owner  string  `json:"owner"`
 	Amount float64 `json:"amount"`
 }
+type pressureInput struct {
+	At       int64   `json:"at"`
+	Pressure float64 `json:"pressure"`
+}
+type shutdownRequest struct {
+	TimedOut        bool            `json:"timed_out"`
+	ValveResponseMS int64           `json:"valve_response_ms"`
+	Pressures       []pressureInput `json:"pressures"`
+}
 
 func decodeJSON(r *http.Request, value any) error {
 	decoder := json.NewDecoder(r.Body)

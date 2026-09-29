@@ -224,13 +224,19 @@ func (p *Plant) AcquireReflux(owner string, amount float64) (model.Lease, error)
 	return lease, nil
 }
 
-func (p *Plant) Shutdown(ctx context.Context, reliefTimeout bool) (relief.ShutdownResult, error) {
+func (p *Plant) Shutdown(ctx context.Context, obs relief.Observations) (relief.ShutdownResult, error) {
 	current := p.Campaign.Advance(model.Shutting)
-	reliefErr := p.Relief.Shutdown(ctx, current, "flare", reliefTimeout)
+	// Every retry against the same still-open campaign appends to one shutdown
+	// process; a successful attempt closes it.
+	p.ReliefHistory.BeginSession(current, "flare", relief.DefaultSafePressure)
+	trace := p.Relief.ShutdownDetailed(ctx, current, "flare", obs)
 	steamErr := p.ReboilerCommands.Close(ctx, p.Reboiler, current)
 	p.ReboilerTelemetry.Record(p.Reboiler.Snapshot())
-	result := relief.CombineShutdown(reliefErr, steamErr, p.Relief.State.Snapshot(), p.Reboiler.ClosureConfirmed(current.Epoch))
-	p.ReliefHistory.Record(p.Relief.State.Snapshot(), reliefErr)
+	p.ReliefHistory.Record(trace)
+	// The evaluation distinguishes "pressure not measured yet" from "measured
+	// and still high": both block shutdown, with their own conclusions.
+	reliefErr := relief.Evaluate(p.Relief.State.Snapshot(), relief.DefaultSafePressure).Error()
+	result := relief.CombineShutdown(reliefErr, steamErr, p.Relief.State.Snapshot(), relief.DefaultSafePressure, p.Reboiler.ClosureConfirmed(current.Epoch))
 	if err := result.Error(); err != nil {
 		p.Incidents.Open("shutdown", err.Error(), current.Revision.String())
 		p.fail(err)
@@ -284,7 +290,7 @@ func (p *Plant) Status() map[string]any {
 	lastError := p.lastError
 	p.mu.RUnlock()
 	gradient, _ := p.Profile.Gradient()
-	return map[string]any{"started": started, "last_error": lastError, "campaign": p.Campaign.Snapshot(), "column": p.Column.Snapshot(), "reflux_used": p.Reflux.Used(), "products": p.ProductTargets(), "relief": p.Relief.State.Snapshot(), "feed_metrics": p.FeedMetrics.Snapshot(), "reflux_telemetry": p.RefluxTelemetry.Snapshot(), "reboiler_telemetry": p.ReboilerTelemetry.Snapshot(), "product_decisions": p.ProductAudit.Count(), "utility_used": p.UtilityLedger.Used(), "metrics": p.Metrics.Snapshot(), "campaign_changes": p.CampaignHistory.Count(), "profile_gradient": gradient, "profile_stable": p.Profile.Stable(40), "evidence_count": p.Evidence.Count(p.Campaign.Snapshot().Revision.String()), "relief_attempts": p.ReliefHistory.Count(), "open_incidents": p.Incidents.CountOpen(), "operational_audit": p.OperationalAudit()}
+	return map[string]any{"started": started, "last_error": lastError, "campaign": p.Campaign.Snapshot(), "column": p.Column.Snapshot(), "reflux_used": p.Reflux.Used(), "products": p.ProductTargets(), "relief": p.Relief.State.Snapshot(), "feed_metrics": p.FeedMetrics.Snapshot(), "reflux_telemetry": p.RefluxTelemetry.Snapshot(), "reboiler_telemetry": p.ReboilerTelemetry.Snapshot(), "product_decisions": p.ProductAudit.Count(), "utility_used": p.UtilityLedger.Used(), "metrics": p.Metrics.Snapshot(), "campaign_changes": p.CampaignHistory.Count(), "profile_gradient": gradient, "profile_stable": p.Profile.Stable(40), "evidence_count": p.Evidence.Count(p.Campaign.Snapshot().Revision.String()), "relief_attempts": p.ReliefHistory.Count(), "relief_history": p.ReliefHistory.Report(), "open_incidents": p.Incidents.CountOpen(), "operational_audit": p.OperationalAudit()}
 }
 
 func (p *Plant) record(kind, payload string) error {

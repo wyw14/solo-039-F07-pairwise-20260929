@@ -17,6 +17,8 @@ func (s *State) Begin(valve string) {
 	s.value.Valve = valve
 	s.value.Released = false
 	s.value.TimedOut = false
+	s.value.Pressure = 0
+	s.value.PressureObserved = false
 	s.mu.Unlock()
 }
 
@@ -32,6 +34,15 @@ func (s *State) Release() {
 	if !s.value.TimedOut {
 		s.value.Released = true
 	}
+	s.mu.Unlock()
+}
+
+// ObservePressure records one pressure reading. Readings only add information:
+// a stale or out-of-order sample never erases the fact that pressure was observed.
+func (s *State) ObservePressure(value float64) {
+	s.mu.Lock()
+	s.value.Pressure = value
+	s.value.PressureObserved = true
 	s.mu.Unlock()
 }
 
