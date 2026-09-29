@@ -31,3 +31,18 @@ func (s *Server) profile(w http.ResponseWriter, r *http.Request) {
 func (s *Server) metrics(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, s.plant.Metrics.Snapshot())
 }
+
+// reliefHistory 返回按停机过程串起的完整泄压历史：发令、阀位响应、
+// 压力观测序列、超时与每次尝试的最终结论。
+func (s *Server) reliefHistory(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, http.StatusOK, map[string]any{
+		"state":         s.plant.Relief.State.Snapshot(),
+		"shutdowns":     s.plant.ReliefHistory.ShutdownCount(),
+		"attempt_total": s.plant.ReliefHistory.Count(),
+		"sessions":      s.plant.ReliefHistory.Sessions(),
+		"attempts":      s.plant.ReliefHistory.Attempts(),
+		"failures":      s.plant.ReliefHistory.Failures(),
+		"slow_valves":   s.plant.ReliefHistory.SlowValveResponses(),
+		"pressure":      s.plant.ReliefHistory.CountPressureStatus(),
+	})
+}

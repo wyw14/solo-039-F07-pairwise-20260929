@@ -249,6 +249,15 @@ func (p *Plant) OperationalAudit() map[string]any {
 	reliefEvaluationSafe := reliefEvaluation.Safe()
 	reliefLatest, reliefLatestPresent := p.ReliefHistory.Latest()
 	reliefFailures := p.ReliefHistory.Failures()
+	reliefSessions := p.ReliefHistory.Sessions()
+	reliefAttempts := p.ReliefHistory.Attempts()
+	reliefSlowValves := p.ReliefHistory.SlowValveResponses()
+	reliefPressureStatus := p.ReliefHistory.CountPressureStatus()
+	reliefActiveSession, reliefActivePresent := p.ReliefHistory.Active()
+	reliefActiveReport := relief.SessionReport{}
+	if reliefActivePresent {
+		reliefActiveReport = reliefActiveSession.Report()
+	}
 	reliefClone := relief.New()
 	reliefClone.Begin(snapshot.Relief.Valve)
 	if snapshot.Relief.TimedOut {
@@ -313,8 +322,32 @@ func (p *Plant) OperationalAudit() map[string]any {
 		"product":   map[string]any{"publish_error": auditError(productPublishErr), "recover_error": auditError(productRecoverErr), "route_error": auditError(productRouteErr), "closed_for_revision": productClose, "transition_error": auditError(productTransitionErr), "durable": productDurable, "routed": productRouted, "recovery_error": auditError(productRecoveryErr), "restore_error": auditError(productRestoreErr), "latest": productLatest, "latest_error": auditError(productLatestErr), "revision_decisions": len(productByRevision), "state_present": productStatePresent, "state_targets": productStateTargets},
 		"reboiler":  map[string]any{"restore_error": auditError(reboilerRestoreErr), "ramp_error": auditError(reboilerRampErr), "trip_error": auditError(reboilerTripErr), "permit": reboilerPermit, "ramp_apply_error": auditError(reboilerRampApplyErr), "recoverable": reboilerRecoverable, "confirmed": reboilerConfirmed},
 		"reflux":    map[string]any{"ramp_error": auditError(refluxRampErr), "submit_error": auditError(refluxSubmitErr), "pending": len(refluxPending), "lease": refluxLease, "next_error": auditError(refluxNextErr), "cancelled": refluxCancelled},
-		"relief":    map[string]any{"safe": reliefSafe, "shutdown_safe": shutdownSafe, "evaluation_error": auditError(reliefEvaluationErr), "evaluation_safe": reliefEvaluationSafe, "latest": reliefLatest, "latest_present": reliefLatestPresent, "failures": len(reliefFailures), "isolate_error": auditError(reliefIsolateErr)},
-		"utility":   map[string]any{"reserve_error": auditError(capacityReserveErr), "capacity_used": capacityUsed, "book_present": bookLeasePresent, "book_fenced": bookLeaseFenced, "ledger_active": len(ledgerActive), "ledger_used": ledgerUsed, "revoked": ledgerRevoked, "valid": leaseValid, "can_open": leaseCanOpen},
-		"service":   map[string]any{"run_error": auditError(serviceRunErr), "phase": servicePhase, "runtime_start_error": auditError(runtimeStartErr), "runtime_running": runtimeRunning, "recover_error": auditError(serviceRecoverErr), "ordered_steps": orderedSteps, "ordered_error": auditError(orderedRecoveryErr), "incident_resolved": incidentResolved, "start_failure_rate": p.Metrics.FailureRate("start")},
+		"relief": map[string]any{
+			"safe":             reliefSafe,
+			"shutdown_safe":    shutdownSafe,
+			"evaluation_error": auditError(reliefEvaluationErr),
+			"evaluation_safe":  reliefEvaluationSafe,
+			"latest":           reliefLatest,
+			"latest_present":   reliefLatestPresent,
+			"failures":         len(reliefFailures),
+			"failure_attempts": reliefFailures,
+			"isolate_error":    auditError(reliefIsolateErr),
+			// 复盘报告回到每条原始尝试：重试不会覆盖前次失败。
+			"shutdown_count":      len(reliefSessions),
+			"attempt_count":       len(reliefAttempts),
+			"sessions":            reliefSessions,
+			"attempts":            reliefAttempts,
+			"slow_valve_count":    len(reliefSlowValves),
+			"slow_valve_attempts": reliefSlowValves,
+			// 区分“尚未测到压力”与“确认未降压”。
+			"pressure_unmeasured": reliefPressureStatus[relief.PressureUnmeasured],
+			"pressure_falling":    reliefPressureStatus[relief.PressureFalling],
+			"pressure_safe":       reliefPressureStatus[relief.PressureSafe],
+			"pressure_holds":      reliefPressureStatus[relief.PressureHolds],
+			"active_session":      reliefActiveReport,
+			"active_present":      reliefActivePresent,
+		},
+		"utility": map[string]any{"reserve_error": auditError(capacityReserveErr), "capacity_used": capacityUsed, "book_present": bookLeasePresent, "book_fenced": bookLeaseFenced, "ledger_active": len(ledgerActive), "ledger_used": ledgerUsed, "revoked": ledgerRevoked, "valid": leaseValid, "can_open": leaseCanOpen},
+		"service": map[string]any{"run_error": auditError(serviceRunErr), "phase": servicePhase, "runtime_start_error": auditError(runtimeStartErr), "runtime_running": runtimeRunning, "recover_error": auditError(serviceRecoverErr), "ordered_steps": orderedSteps, "ordered_error": auditError(orderedRecoveryErr), "incident_resolved": incidentResolved, "start_failure_rate": p.Metrics.FailureRate("start")},
 	}
 }

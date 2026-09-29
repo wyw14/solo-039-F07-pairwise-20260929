@@ -1,0 +1,5 @@
+{"ID":"307c1045-e76c-4e73-99ea-c591782e2ef3","Kind":"feed.transition","Campaign":"98cc7272-93a2-4f04-b935-5d87fb302613","Revision":"36efaabd-515e-4f0c-8321-d3c213769c0f","Epoch":1,"Payload":"new-active::false:0.00:primary:true","At":1790656483864068936}
+{"ID":"2913c183-175d-4b07-a7b5-b91c5fab9094","Kind":"plant.started","Campaign":"98cc7272-93a2-4f04-b935-5d87fb302613","Revision":"36efaabd-515e-4f0c-8321-d3c213769c0f","Epoch":3,"Payload":"primary","At":1790656483890454037}
+{"ID":"ff89f2b1-b4e5-477b-8cab-3c6120632781","Kind":"plant.stopped","Campaign":"98cc7272-93a2-4f04-b935-5d87fb302613","Revision":"36efaabd-515e-4f0c-8321-d3c213769c0f","Epoch":6,"Payload":"safe","At":1790656708684298807}
+{"ID":"64b107af-9319-42a2-854c-c9d2b00b79ea","Kind":"feed.transition","Campaign":"98cc7272-93a2-4f04-b935-5d87fb302613","Revision":"36efaabd-515e-4f0c-8321-d3c213769c0f","Epoch":6,"Payload":"new-active::false:0.00:primary:true","At":1790656726745897107}
+{"ID":"d6671e51-ed29-47c7-b25b-de9cfe193a0a","Kind":"plant.started","Campaign":"98cc7272-93a2-4f04-b935-5d87fb302613","Revision":"36efaabd-515e-4f0c-8321-d3c213769c0f","Epoch":8,"Payload":"primary","At":1790656726762358331}
